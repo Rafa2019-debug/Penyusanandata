@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Penyusun FINAL AUTO SAVE FIX</title>
+<style>
+body{font-family:Arial;background:#f2f2f2;padding:12px}
+textarea{width:100%;height:260px;padding:10px;border-radius:8px;box-sizing:border-box}
+button{padding:8px 12px;margin:5px;border:none;border-radius:8px;color:#fff;cursor:pointer}
+.proses{background:#0b57d0}.copy{background:#198754}.hapus{background:#dc3545}
+.card{background:#fff;padding:12px;border-radius:10px;margin-top:15px}
+.hasil{white-space:pre-wrap;line-height:1.6}
+.nomor{font-weight:bold;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<h2>Penyusun FINAL AUTO SAVE FIX</h2>
+
+<textarea id="input"></textarea><br>
+
+<button class="proses" onclick="proses()">Proses Semua</button>
+<button class="copy" onclick="copyAll()">Salin Semua</button>
+<button class="hapus" onclick="hapusSemua()">Hapus Semua</button>
+
+<div id="hasil"></div>
+
+<script>
+
+let allText="";
+
+// LOAD OTOMATIS
+window.onload=function(){
+
+const simpanInput=localStorage.getItem("penyusun_input");
+const simpanHasil=localStorage.getItem("penyusun_hasil");
+const simpanAll=localStorage.getItem("penyusun_alltext");
+
+if(simpanInput){
+document.getElementById("input").value=simpanInput;
+}
+
+if(simpanHasil){
+document.getElementById("hasil").innerHTML=simpanHasil;
+}
+
+if(simpanAll){
+allText=simpanAll;
+}
+
+}
+
+// AUTO SAVE INPUT
+document.addEventListener("input",function(){
+
+localStorage.setItem(
+"penyusun_input",
+document.getElementById("input").value
+);
+
+});
+
+function proses(){
+
+const raw=document.getElementById("input").value;
+const hasil=document.getElementById("hasil");
+
+hasil.innerHTML="";
+allText="";
+
+const cleaned = raw.replace(
+/\[\d+\/\d+,\s*[\d.]+\]\s*[^:]+\:\s*/g,
+"\n"
+);
+
+const blocks = cleaned.match(/\*[^\n]+\*[\s\S]*?(?=\n\*[^\n]+\*|$)/g) || [];
+
+blocks.forEach((block,index)=>{
+
+const lines=block.split("\n")
+.map(x=>x.trim())
+.filter(x=>x!="");
+
+const alamat = lines[0] || "";
+
+const nikRaw = lines.find(x=>/^\d{16}$/.test(x)) || "";
+const nik = nikRaw.substring(0,6);
+
+const gender = lines.find(x=>x=="PRIA"||x=="WANITA") || "";
+
+let ttl="";
+
+const g = lines.findIndex(x=>x==gender);
+
+if(g!=-1 && lines[g+1]){
+ttl=lines[g+1];
+}
+
+const sensor = lines.find(x=>
+x.includes("SENSOR") || x.includes("TUNGGAL")
+) || "";
+
+const nominal = lines.find(x=>
+x.startsWith("GLOBAL") ||
+/^\d{1,3}(\.\d{3})+$/.test(x)
+) || "";
+
+let perusahaan="";
+
+const ni = lines.findIndex(x=>x==nominal);
+
+if(ni!=-1 && lines[ni+1]){
+perusahaan=lines[ni+1];
+}
+
+const tanggal = lines.find(x=>x.startsWith("N/A")) || "";
+
+const cleanText=`${alamat}
+
+${nik}
+${gender}
+${ttl}
+
+${sensor}
+${nominal}
+${perusahaan}
+${tanggal}`;
+
+allText += cleanText + "\n\n====================\n\n";
+
+const card=document.createElement("div");
+card.className="card";
+card.id="card"+index;
+
+card.innerHTML=`
+<div class="nomor">${index+1}</div>
+<button class="copy" onclick="copyText(${index})">📋 Salin</button>
+<button class="hapus" onclick="hapusPerdata(${index})">🗑️ Hapus</button>
+<div class="hasil" id="h${index}">${cleanText}</div>
+`;
+
+hasil.appendChild(card);
+
+});
+
+// SAVE HASIL
+localStorage.setItem("penyusun_hasil",hasil.innerHTML);
+localStorage.setItem("penyusun_alltext",allText);
+
+}
+
+function fallbackCopy(text){
+
+const t=document.createElement("textarea");
+t.value=text;
+document.body.appendChild(t);
+t.select();
+document.execCommand("copy");
+document.body.removeChild(t);
+
+alert("Berhasil disalin");
+
+}
+
+function salin(text){
+
+if(navigator.clipboard){
+
+navigator.clipboard.writeText(text)
+.then(()=>alert("Berhasil disalin"))
+.catch(()=>fallbackCopy(text));
+
+}else{
+
+fallbackCopy(text);
+
+}
+
+}
+
+function copyText(i){
+
+const el=document.getElementById("h"+i);
+
+if(el){
+salin(el.innerText);
+}
+
+}
+
+function copyAll(){
+
+salin(allText);
+
+}
+
+function hapusPerdata(i){
+
+const c=document.getElementById("card"+i);
+
+if(c)c.remove();
+
+// update autosave
+localStorage.setItem(
+"penyusun_hasil",
+document.getElementById("hasil").innerHTML
+);
+
+}
+
+function hapusSemua(){
+
+document.getElementById("input").value="";
+document.getElementById("hasil").innerHTML="";
+allText="";
+
+localStorage.removeItem("penyusun_input");
+localStorage.removeItem("penyusun_hasil");
+localStorage.removeItem("penyusun_alltext");
+
+}
+
+</script>
+
+</body>
+</html>
