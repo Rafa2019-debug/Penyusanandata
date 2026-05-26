@@ -1,226 +1,279 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Penyusun FINAL AUTO SAVE FIX</title>
-<style>
-body{font-family:Arial;background:#f2f2f2;padding:12px}
-textarea{width:100%;height:260px;padding:10px;border-radius:8px;box-sizing:border-box}
-button{padding:8px 12px;margin:5px;border:none;border-radius:8px;color:#fff;cursor:pointer}
-.proses{background:#0b57d0}.copy{background:#198754}.hapus{background:#dc3545}
-.card{background:#fff;padding:12px;border-radius:10px;margin-top:15px}
-.hasil{white-space:pre-wrap;line-height:1.6}
-.nomor{font-weight:bold;margin-bottom:8px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penyusun FINAL AUTO SAVE FIX</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 15px;
+            color: #000;
+        }
+        h2 {
+            font-size: 22px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .textarea-container {
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            padding: 2px;
+            margin-bottom: 15px;
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            border: none;
+            outline: none;
+            resize: vertical;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .main-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn-blue { background-color: #0d6efd; }
+        .btn-green { background-color: #198754; }
+        .btn-red { background-color: #dc3545; }
+        .btn:active { opacity: 0.8; }
+
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .card-number {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .btn-small {
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .card-content {
+            white-space: pre-line;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Penyusun FINAL AUTO SAVE FIX</h2>
+    <h2>Penyusun FINAL AUTO SAVE FIX</h2>
+    
+    <div class="textarea-container">
+        <textarea id="inputData" placeholder="Masukkan data di sini..."></textarea>
+    </div>
+    
+    <div class="main-buttons">
+        <button class="btn btn-blue" onclick="prosesData()">Proses Semua</button>
+        <button class="btn btn-green" onclick="salinSemua()">Salin Semua</button>
+        <button class="btn btn-red" onclick="hapusSemua()">Hapus Semua</button>
+    </div>
 
-<textarea id="input"></textarea><br>
-
-<button class="proses" onclick="proses()">Proses Semua</button>
-<button class="copy" onclick="copyAll()">Salin Semua</button>
-<button class="hapus" onclick="hapusSemua()">Hapus Semua</button>
-
-<div id="hasil"></div>
+    <div id="outputContainer"></div>
 
 <script>
-
-let allText="";
-
-// LOAD OTOMATIS
-window.onload=function(){
-
-const simpanInput=localStorage.getItem("penyusun_input");
-const simpanHasil=localStorage.getItem("penyusun_hasil");
-const simpanAll=localStorage.getItem("penyusun_alltext");
-
-if(simpanInput){
-document.getElementById("input").value=simpanInput;
-}
-
-if(simpanHasil){
-document.getElementById("hasil").innerHTML=simpanHasil;
-}
-
-if(simpanAll){
-allText=simpanAll;
-}
-
-}
-
-// AUTO SAVE INPUT
-document.addEventListener("input",function(){
-
-localStorage.setItem(
-"penyusun_input",
-document.getElementById("input").value
-);
-
-});
-
-function proses(){
-
-const raw=document.getElementById("input").value;
-const hasil=document.getElementById("hasil");
-
-hasil.innerHTML="";
-allText="";
-
-const cleaned = raw.replace(
-/\[\d+\/\d+,\s*[\d.]+\]\s*[^:]+\:\s*/g,
-"\n"
-);
-
-const blocks = cleaned.match(/\*[^\n]+\*[\s\S]*?(?=\n\*[^\n]+\*|$)/g) || [];
-
-blocks.forEach((block,index)=>{
-
-const lines=block.split("\n")
-.map(x=>x.trim())
-.filter(x=>x!="");
-
-const alamat = lines[0] || "";
-
-const nikRaw = lines.find(x=>/^\d{16}$/.test(x)) || "";
-const nik = nikRaw.substring(0,6);
-
-const gender = lines.find(x=>x=="PRIA"||x=="WANITA") || "";
-
-let ttl="";
-
-const g = lines.findIndex(x=>x==gender);
-
-if(g!=-1 && lines[g+1]){
-ttl=lines[g+1];
-}
-
-const sensor = lines.find(x=>
-x.includes("SENSOR") || x.includes("TUNGGAL")
-) || "";
-
-const nominal = lines.find(x=>
-x.startsWith("GLOBAL") ||
-/^\d{1,3}(\.\d{3})+$/.test(x)
-) || "";
-
-let perusahaan="";
-
-const ni = lines.findIndex(x=>x==nominal);
-
-if(ni!=-1 && lines[ni+1]){
-perusahaan=lines[ni+1];
-}
-
-const tanggal = lines.find(x=>x.startsWith("N/A")) || "";
-
-const cleanText=`${alamat}
-
-${nik}
-${gender}
-${ttl}
-
-${sensor}
-${nominal}
-${perusahaan}
-${tanggal}`;
-
-allText += cleanText + "\n\n====================\n\n";
-
-const card=document.createElement("div");
-card.className="card";
-card.id="card"+index;
-
-card.innerHTML=`
-<div class="nomor">${index+1}</div>
-<button class="copy" onclick="copyText(${index})">📋 Salin</button>
-<button class="hapus" onclick="hapusPerdata(${index})">🗑️ Hapus</button>
-<div class="hasil" id="h${index}">${cleanText}</div>
-`;
-
-hasil.appendChild(card);
-
-});
-
-// SAVE HASIL
-localStorage.setItem("penyusun_hasil",hasil.innerHTML);
-localStorage.setItem("penyusun_alltext",allText);
-
-}
-
-function fallbackCopy(text){
-
-const t=document.createElement("textarea");
-t.value=text;
-document.body.appendChild(t);
-t.select();
-document.execCommand("copy");
-document.body.removeChild(t);
-
-alert("Berhasil disalin");
-
-}
-
-function salin(text){
-
-if(navigator.clipboard){
-
-navigator.clipboard.writeText(text)
-.then(()=>alert("Berhasil disalin"))
-.catch(()=>fallbackCopy(text));
-
-}else{
-
-fallbackCopy(text);
-
-}
-
-}
-
-function copyText(i){
-
-const el=document.getElementById("h"+i);
-
-if(el){
-salin(el.innerText);
-}
-
-}
-
-function copyAll(){
-
-salin(allText);
-
-}
-
-function hapusPerdata(i){
-
-const c=document.getElementById("card"+i);
-
-if(c)c.remove();
-
-// update autosave
-localStorage.setItem(
-"penyusun_hasil",
-document.getElementById("hasil").innerHTML
-);
-
-}
-
-function hapusSemua(){
-
-document.getElementById("input").value="";
-document.getElementById("hasil").innerHTML="";
-allText="";
-
-localStorage.removeItem("penyusun_input");
-localStorage.removeItem("penyusun_hasil");
-localStorage.removeItem("penyusun_alltext");
-
-}
-
+    const inputData = document.getElementById('inputData');
+    const outputContainer = document.getElementById('outputContainer');
+    let dataTerolah = [];
+
+    // FIX AUTO SAVE: Saat halaman dimuat/di-refresh, langsung tampilkan kembali datanya
+    window.onload = function() {
+        const savedData = localStorage.getItem('autoSaveData');
+        if (savedData) {
+            inputData.value = savedData;
+            prosesData(); // Otomatis memproses data lama tanpa perlu klik tombol lagi
+        }
+    };
+
+    // Menyimpan ketikan secara otomatis ke memori browser
+    inputData.addEventListener('input', function() {
+        localStorage.setItem('autoSaveData', this.value);
+    });
+
+    function prosesData() {
+        try {
+            outputContainer.innerHTML = ''; 
+            dataTerolah = [];
+            const rawInput = inputData.value;
+            
+            if (!rawInput.trim()) return;
+
+            const cleanInput = rawInput.replace(/[\u200B-\u200D\uFEFF]/g, '');
+            const lines = cleanInput.split('\n').map(b => b.trim()).filter(b => b !== '');
+            
+            let currentBlock = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let matchWilayah = lines[i].match(/\*([^*]{8,})\*/);
+
+                if (matchWilayah) {
+                    if (currentBlock.length > 0) dataTerolah.push(parseBlock(currentBlock));
+                    currentBlock = [lines[i]];
+                } else if (currentBlock.length > 0) {
+                    currentBlock.push(lines[i]);
+                }
+            }
+            if (currentBlock.length > 0) dataTerolah.push(parseBlock(currentBlock));
+
+            if (dataTerolah.length === 0) {
+                outputContainer.innerHTML = '<div style="background:#f8d7da; color:#842029; padding:15px; border-radius:6px; margin-bottom:15px;"><b>Gagal:</b> Tidak ada format *NAMA WILAYAH* ditemukan.</div>';
+                return;
+            }
+
+            dataTerolah.sort((a, b) => a.wilayah.localeCompare(b.wilayah));
+
+            dataTerolah.forEach((data, index) => {
+                const noUrut = index + 1;
+                const teksTampil = `${data.wilayah}\n\n${data.nik}\n${data.gender}\n${data.tglLahir}\n\n${data.status}\n${data.nominal}\n${data.instansi}\n${data.tanggalKerja}`;
+
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                const cardNumber = document.createElement('div');
+                cardNumber.className = 'card-number';
+                cardNumber.textContent = noUrut;
+
+                const cardActions = document.createElement('div');
+                cardActions.className = 'card-actions';
+
+                const btnSalin = document.createElement('button');
+                btnSalin.className = 'btn-small btn-green';
+                btnSalin.textContent = '📋 Salin';
+                btnSalin.onclick = () => salinKeClipboard(teksTampil, btnSalin, '📋 Salin');
+
+                const btnHapus = document.createElement('button');
+                btnHapus.className = 'btn-small btn-red';
+                btnHapus.textContent = '🗑️ Hapus';
+                btnHapus.onclick = () => card.remove();
+
+                cardActions.appendChild(btnSalin);
+                cardActions.appendChild(btnHapus);
+
+                const cardContent = document.createElement('div');
+                cardContent.className = 'card-content';
+                cardContent.textContent = teksTampil;
+
+                card.appendChild(cardNumber);
+                card.appendChild(cardActions);
+                card.appendChild(cardContent);
+
+                outputContainer.appendChild(card);
+            });
+
+        } catch (error) {
+            outputContainer.innerHTML = '<div style="background:#f8d7da; color:#842029; padding:15px; border-radius:6px;"><b>Kesalahan:</b> ' + error.message + '</div>';
+        }
+    }
+
+    function parseBlock(blockLines) {
+        let match = blockLines[0].match(/\*([^*]+)\*/);
+        let wilayah = match ? `*${match[1]}*` : blockLines[0];
+
+        let dataLines = blockLines.slice(1);
+        
+        let startIndex = dataLines.findIndex(l => /^\d{6,}/.test(l.replace(/\s/g, '')));
+        if (startIndex === -1) startIndex = 0; 
+
+        let nik = dataLines[startIndex] ? dataLines[startIndex].replace(/\s/g, '').substring(0, 6) : '';
+        let gender = dataLines[startIndex + 1] || '';
+        let tglLahir = dataLines[startIndex + 2] || '';
+        let status = dataLines[startIndex + 3] || '';
+        let nominal = dataLines[startIndex + 4] || '';
+        let instansi = dataLines[startIndex + 5] || '';
+        let tanggalKerja = dataLines[startIndex + 6] || '';
+
+        return { wilayah, nik, gender, tglLahir, status, nominal, instansi, tanggalKerja };
+    }
+
+    function salinSemua() {
+        if (dataTerolah.length === 0) {
+            alert("Tidak ada data untuk disalin. Proses data terlebih dahulu!");
+            return;
+        }
+        let semuaTeks = dataTerolah.map((data) => {
+            return `${data.wilayah}\n\n${data.nik}\n${data.gender}\n${data.tglLahir}\n\n${data.status}\n${data.nominal}\n${data.instansi}\n${data.tanggalKerja}`;
+        }).join('\n\n\n');
+        
+        salinKeClipboard(semuaTeks, document.querySelector('.btn-green'), 'Salin Semua');
+    }
+
+    function hapusSemua() {
+        if (confirm("Apakah Anda yakin ingin menghapus semua data input dan hasil?")) {
+            inputData.value = '';
+            outputContainer.innerHTML = '';
+            localStorage.removeItem('autoSaveData');
+            dataTerolah = [];
+        }
+    }
+
+    function salinKeClipboard(teks, tombol, teksAwal) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(teks).then(berhasil).catch(fallbackCopy);
+        } else {
+            fallbackCopy();
+        }
+
+        function fallbackCopy() {
+            const textarea = document.createElement('textarea');
+            textarea.value = teks;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                berhasil();
+            } catch (err) {
+                alert('Gagal menyalin data secara otomatis.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function berhasil() {
+            tombol.textContent = '✅ Tersalin';
+            setTimeout(() => {
+                tombol.textContent = teksAwal;
+            }, 2000);
+        }
+    }
 </script>
 
 </body>
